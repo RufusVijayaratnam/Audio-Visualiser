@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/c/Users/Rufus Vijayaratnam/Dev/Audio Visualiser/Visualiser/main.cpp
+iostream
+-
+complex
+-
+vector
+-
+FFT/SoundProcessing.hpp
+-
+
+Audio-Processing/src/FFT/SoundProcessing.hpp
+vector
+-
+complex
+-
+iostream
+-
+string
+-
+
