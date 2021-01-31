@@ -11,7 +11,12 @@
 std::vector<std::complex<double>> Audio::FFT(std::vector<std::complex<double>> &samples) {
     int N = samples.size();
 	
-	if (N == 1) {return samples;};
+	if (N == 1) {
+		return samples;
+	} 
+	else if (N <= 32) {
+		return Audio::DFT(samples);
+	}
 
 	int M = N / 2;
 
@@ -27,10 +32,9 @@ std::vector<std::complex<double>> Audio::FFT(std::vector<std::complex<double>> &
 	Feven = FFT(Xeven);
 	std::vector<std::complex<double>> Fodd(M, 0);
 	Fodd = FFT(Xodd);
-	double pi = 3.14159265359;
 	std::vector<std::complex<double>> freqbins(N, 0);
 	for(int k = 0; k < (N / 2); k++) {
-		std::complex<double> cmplxexponential = std::polar(1.0, -2*pi*k/N) * Fodd[k];
+		std::complex<double> cmplxexponential = std::polar(1.0, -2*M_PI*k/N) * Fodd[k];
 		freqbins[k] = Feven[k] + cmplxexponential;
 		freqbins[k+N/2] = Feven[k] - cmplxexponential;
 	}
@@ -126,3 +130,23 @@ std::vector<std::complex<double>> Audio::ChannelAveraged(AudioFile<double> &song
 }
 
 
+std::vector<std::complex<double>> Audio::DFT(std::vector<std::complex<double>> &samples) {
+	int N = samples.size();
+	std::vector<std::complex<double>> frequency_bin;
+	for (int k = 0; k < N; k++) {
+		std::vector<std::complex<double>> expnt;
+		for (int n = 0; n < N; n++) {
+		expnt.push_back(std::polar(1.0, -2 * M_PI * k * n / N));
+		}
+		std::vector<std::complex<double>> res;
+		for (int j = 0; j < N; j++) {
+			res.push_back(samples[j] * expnt[j]);
+		}
+		std::complex<double> sum;
+		for (int j = 0; j < N; j++) {
+			sum += res[j];
+		}
+		frequency_bin.push_back(sum);
+	}	
+	return frequency_bin;
+}
