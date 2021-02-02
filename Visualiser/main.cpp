@@ -1,13 +1,15 @@
 #include <iostream>
 #include <complex>
 #include <vector>
+#include <MainGFX/Graphics.hpp>
 #include <FFT/SoundProcessing.hpp>
 #include <Parse/AudioFile.h>
-#include <gsl/gsl_wavelet.h>
 #include <stdio.h>
 
+GLFWwindow * window;
+
 int main() {
-    AudioFile<double> Song;
+   /*  AudioFile<double> Song;
     std::string directory = "/mnt/c/Users/Rufus Vijayaratnam/Dev/Audio Visualiser/Sounds/";
     std::string audioFile = "test-audio.wav";
     std::string filePath = directory + audioFile;
@@ -23,11 +25,20 @@ int main() {
     std::vector<double> frequencies = Audio::ExtractFrequencies(Song.getSampleRate());
     std::vector<std::vector<double>> magnitudes = Audio::ExtractMagnitudes(frames);
 
-    printf("Shape of bins: (%i, %i) \n", int(frequencyBins.size()), int(frequencyBins[3].size()));
+    printf("Shape of bins: (%i, %i) \n", int(frequencyBins.size()), int(frequencyBins[3].size())); */
 
-    for (int i = 0; i < 10; i++) {
+    /* for (int i = 0; i < 10; i++) {
         std::cout << frequencyBins[0][i] << std::endl;
-    }
+    } */
+
+    bool windowOpened;
+    if (!gfx::InitialiseGLFW()) return -1;
+    window = gfx::OpenWindow("Music Visualiser", windowOpened);
+    if (!windowOpened) return -1;
+    gfx::MainLoop(window);
+
+// Check if the ESC key was pressed or the window was closed
+
 
 
     return 0;
