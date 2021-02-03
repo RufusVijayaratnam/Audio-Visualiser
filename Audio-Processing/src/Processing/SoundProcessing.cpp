@@ -139,6 +139,8 @@ std::vector<std::complex<double>> Audio::DFT(std::vector<std::complex<double>> &
 		expnt.push_back(std::polar(1.0, -2 * M_PI * k * n / N));
 		}
 		std::vector<std::complex<double>> res;
+		//What the fuck is res I may ask? Who knows, it's copied from my Python implementation.
+		//This is why you should comment your code.
 		for (int j = 0; j < N; j++) {
 			res.push_back(samples[j] * expnt[j]);
 		}
@@ -149,4 +151,77 @@ std::vector<std::complex<double>> Audio::DFT(std::vector<std::complex<double>> &
 		frequency_bin.push_back(sum);
 	}	
 	return frequency_bin;
+}
+
+//OpenGL coordinates work between -1 and 1 so we must put values into this range with some desired baseline.
+//For example, if we want 0 amplitude to appear just off the bottom of the window we can assign that as -0.8
+//So that leaves 1.8 remainder for dynamic spectrum. So maximum magnitude must be equal to 1.8.
+//But lets actually make it 1.6 so that there is a bit of a header and it doesn't look like the 
+//spectrum bars are going off the screen.
+std::vector<std::vector<double>> Audio::NormaliseAmplitude(std::vector<std::vector<double>> &frames) {
+	int nFrames = frames.size();
+	std::vector<std::vector<double>> normalisedFrames;
+	for (int i = 0; i < nFrames; i++) {
+		double maxAmplitude = *std::max_element(frames[i].begin(), frames[i].end());
+		std::vector<double> normalisedFrame;
+		for (int j = 0; j < BLOCK_SIZE; j++) {
+			//Line below ensures that all amplitudes will range from 0 to 1.6
+			double element = frames[i][j] / (1.0 / 1.6 * maxAmplitude);
+			element -= 1; //Now all elements are between - 0.8 and 0.8
+			normalisedFrame.push_back(element);
+		}
+			normalisedFrames.push_back(normalisedFrame);
+	}
+	return normalisedFrames;
+}
+
+//int N is the number of frequency representations desired.
+std::vector<double> Audio::SpectrumFrequencies(std::vector<double> &frequencies, int N) {
+	std::vector<double> spectrumFrequencies;
+	const double minFrequency = 50;
+	double maxFrequency;
+	if (frequencies.back() > 20000) {
+		maxFrequency = 20000;
+	} else {
+		maxFrequency = frequencies.back();
+	}
+
+	double span = (maxFrequency - minFrequency) / N;
+	spectrumFrequencies.push_back(minFrequency);
+	for (int i = 0; i <= N; i++) {
+		double spectrumFrequency = 50 + span * i;
+		spectrumFrequencies.push_back(spectrumFrequency);
+	}
+	return spectrumFrequencies;
+}
+
+//This function takes in the full magnitude vector and the vector of frequency ranges to be represented by each 
+//segment of the spectrum.
+//It divides the magnitudes into the correct respective ranges. The length of each frame will be N where n
+//is the desired number of bars on the spectrum.
+std::vector<std::vector<double>> Audio::MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> spectrumFrequencies) {
+	std::vector<std::vector<double>> dividedMagnitudes;
+	int N = spectrumFrequencies.size();
+	int nFrames = magnitudes.size();
+	int prevMinIndex = 0;
+	int currentIndex; //These are used to increase efficiency of the loop. To remember where 
+	for (int k = 0; k < nFrames; k++) {
+		std::vector<double> dividedMagnitudesFrame;
+		for (int i = 0; i < (N - 1); i++) {
+			std::vector<double> frequencyBandMags;
+			double max = spectrumFrequencies[i + 1];
+			for (int j = prevMinIndex; j < nFrames; j++) {
+				double mag = magnitudes[k][j];
+				if (mag < max) {
+					frequencyBandMags.push_back(mag);
+					currentIndex = j;
+				}
+			}
+			double bandAvg = std::accumulate(frequencyBandMags.begin(), frequencyBandMags.end(), 0.0) / (currentIndex - prevMinIndex);
+			dividedMagnitudesFrame.push_back(bandAvg);
+			prevMinIndex = currentIndex;
+		}
+		dividedMagnitudes.push_back(dividedMagnitudesFrame);
+	}
+	return dividedMagnitudes;
 }

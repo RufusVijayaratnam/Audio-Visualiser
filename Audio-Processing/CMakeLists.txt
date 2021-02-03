@@ -1,7 +1,7 @@
 add_library(
     Audio STATIC
-    src/FFT/SoundProcessing.hpp
-    src/FFT/SoundProcessing.cpp
+    src/Processing/SoundProcessing.hpp
+    src/Processing/SoundProcessing.cpp
     src/Parse/AudioFile.h
 )
 

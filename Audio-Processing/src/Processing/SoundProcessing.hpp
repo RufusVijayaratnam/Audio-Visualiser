@@ -14,6 +14,7 @@
 #include <string>
 #include <Parse/AudioFile.h>
 #include <cmath>
+#include <numeric>
 #define BLOCK_SIZE 1024
 
 namespace Audio {
@@ -32,7 +33,13 @@ std::vector<std::vector<double>> ExtractMagnitudes(std::vector<std::vector<std::
 std::vector<std::vector<std::complex<double>>> FramedFFT(std::vector<std::vector<std::complex<double>>> &frames);
 
 std::vector<std::complex<double>> ChannelAveraged(AudioFile<double> &song);
+
 std::vector<std::complex<double>> DFT(std::vector<std::complex<double>> &samples);
 
+std::vector<std::vector<double>> NormaliseAmplitude(std::vector<std::vector<double>> &magnitudes);
+
+std::vector<double> SpectrumFrequencies(std::vector<double> &frequencies, int N);
+
+std::vector<std::vector<double>> MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> spectrumFrequencies);
 }
 #endif 
