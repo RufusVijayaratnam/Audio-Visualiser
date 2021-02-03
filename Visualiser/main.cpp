@@ -35,10 +35,11 @@ int main() {
     if (!gfx::InitialiseGLFW()) return -1;
     window = gfx::OpenWindow("Music Visualiser", windowOpened);
     if (!windowOpened) return -1;
-    gfx::MainLoop(window);
 
-// Check if the ESC key was pressed or the window was closed
 
+
+
+    gfx::Main(window);
 
 
     return 0;

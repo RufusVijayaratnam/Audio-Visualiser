@@ -13,12 +13,14 @@
 #include <glm/glm.hpp>
 #include <stdio.h>
 #include <iostream>
+#include "shader.hpp"
+#include <string>
 
 
 
 namespace gfx {
     bool InitialiseGLFW();
     GLFWwindow* OpenWindow(const char * windowName, bool &windowOpened);
-    void MainLoop(GLFWwindow* window);
+    void Main(GLFWwindow* window);
 }
 #endif

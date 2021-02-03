@@ -5,4 +5,4 @@ add_library(
     src/Parse/AudioFile.h
 )
 
-target_include_directories(Audio PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(Audio PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")  
