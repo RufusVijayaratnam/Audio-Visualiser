@@ -164,10 +164,10 @@ std::vector<std::vector<double>> Audio::NormaliseAmplitude(std::vector<std::vect
 	for (int i = 0; i < nFrames; i++) {
 		double maxAmplitude = *std::max_element(frames[i].begin(), frames[i].end());
 		std::vector<double> normalisedFrame;
-		for (int j = 0; j < BLOCK_SIZE; j++) {
+		for (int j = 0; j < (BLOCK_SIZE / 2); j++) {
 			//Line below ensures that all amplitudes will range from 0 to 1.6
 			double element = frames[i][j] / (1.0 / 1.6 * maxAmplitude);
-			element -= 1; //Now all elements are between - 0.8 and 0.8
+			element -= 0.8; //Now all elements are between - 0.8 and 0.8
 			normalisedFrame.push_back(element);
 		}
 			normalisedFrames.push_back(normalisedFrame);
@@ -187,7 +187,6 @@ std::vector<double> Audio::SpectrumFrequencies(std::vector<double> &frequencies,
 	}
 
 	double span = (maxFrequency - minFrequency) / N;
-	spectrumFrequencies.push_back(minFrequency);
 	for (int i = 0; i <= N; i++) {
 		double spectrumFrequency = 50 + span * i;
 		spectrumFrequencies.push_back(spectrumFrequency);
@@ -197,31 +196,42 @@ std::vector<double> Audio::SpectrumFrequencies(std::vector<double> &frequencies,
 
 //This function takes in the full magnitude vector and the vector of frequency ranges to be represented by each 
 //segment of the spectrum.
-//It divides the magnitudes into the correct respective ranges. The length of each frame will be N where n
+//It divides the magnitudes into the correct respective ranges. The length of each frame will be N where N
 //is the desired number of bars on the spectrum.
-std::vector<std::vector<double>> Audio::MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> spectrumFrequencies) {
+std::vector<std::vector<double>> Audio::MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> &spectrumFrequencies, std::vector<double> &frequencies) {
 	std::vector<std::vector<double>> dividedMagnitudes;
-	int N = spectrumFrequencies.size();
+	int N = spectrumFrequencies.size() - 1;
+	printf("here n is %i \n", N);
 	int nFrames = magnitudes.size();
+	for (int k = 0; k < nFrames; k++) {
+
 	int prevMinIndex = 0;
 	int currentIndex; //These are used to increase efficiency of the loop. To remember where 
-	for (int k = 0; k < nFrames; k++) {
+		//For single frame
 		std::vector<double> dividedMagnitudesFrame;
-		for (int i = 0; i < (N - 1); i++) {
+		for (int i = 0; i < (N - 1); i++) { //Iterate through each frequency range
 			std::vector<double> frequencyBandMags;
 			double max = spectrumFrequencies[i + 1];
-			for (int j = prevMinIndex; j < nFrames; j++) {
+			for (int j = prevMinIndex; j < (BLOCK_SIZE / 2); j++) {
 				double mag = magnitudes[k][j];
-				if (mag < max) {
+				double magFrequency = frequencies[j];
+				if (magFrequency < max) {
 					frequencyBandMags.push_back(mag);
 					currentIndex = j;
+				} else {
+					break;
 				}
 			}
-			double bandAvg = std::accumulate(frequencyBandMags.begin(), frequencyBandMags.end(), 0.0) / (currentIndex - prevMinIndex);
+			double bandAvg = std::accumulate(frequencyBandMags.begin(), frequencyBandMags.end(), 0.0) / ((currentIndex + 1) - prevMinIndex);
 			dividedMagnitudesFrame.push_back(bandAvg);
 			prevMinIndex = currentIndex;
 		}
+
 		dividedMagnitudes.push_back(dividedMagnitudesFrame);
+		//Single frame end
+
+
+
 	}
 	return dividedMagnitudes;
 }

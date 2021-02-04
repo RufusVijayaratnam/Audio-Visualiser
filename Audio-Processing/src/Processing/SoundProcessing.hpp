@@ -40,6 +40,6 @@ std::vector<std::vector<double>> NormaliseAmplitude(std::vector<std::vector<doub
 
 std::vector<double> SpectrumFrequencies(std::vector<double> &frequencies, int N);
 
-std::vector<std::vector<double>> MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> spectrumFrequencies);
+std::vector<std::vector<double>> MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> &spectrumFrequencies, std::vector<double> &frequencies);
 }
 #endif 
