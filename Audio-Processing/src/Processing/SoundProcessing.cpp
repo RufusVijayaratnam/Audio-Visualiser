@@ -158,21 +158,21 @@ std::vector<std::complex<double>> Audio::DFT(std::vector<std::complex<double>> &
 //So that leaves 1.8 remainder for dynamic spectrum. So maximum magnitude must be equal to 1.8.
 //But lets actually make it 1.6 so that there is a bit of a header and it doesn't look like the 
 //spectrum bars are going off the screen.
-std::vector<std::vector<double>> Audio::NormaliseAmplitude(std::vector<std::vector<double>> &frames) {
-	int nFrames = frames.size();
+void Audio::NormaliseAmplitude(std::vector<std::vector<double>> &magnitudes) {
+	int nFrames = magnitudes.size();
 	std::vector<std::vector<double>> normalisedFrames;
 	for (int i = 0; i < nFrames; i++) {
-		double maxAmplitude = *std::max_element(frames[i].begin(), frames[i].end());
+		double maxAmplitude = *std::max_element(magnitudes[i].begin(), magnitudes[i].end());
 		std::vector<double> normalisedFrame;
 		for (int j = 0; j < (BLOCK_SIZE / 2); j++) {
 			//Line below ensures that all amplitudes will range from 0 to 1.6
-			double element = frames[i][j] / (1.0 / 1.6 * maxAmplitude);
+			double element = magnitudes[i][j] / (1.0 / 1.6 * maxAmplitude);
 			element -= 0.8; //Now all elements are between - 0.8 and 0.8
 			normalisedFrame.push_back(element);
 		}
-			normalisedFrames.push_back(normalisedFrame);
+			//normalisedFrames.push_back(normalisedFrame);
+			magnitudes[i] = normalisedFrame;
 	}
-	return normalisedFrames;
 }
 
 //int N is the number of frequency representations desired.

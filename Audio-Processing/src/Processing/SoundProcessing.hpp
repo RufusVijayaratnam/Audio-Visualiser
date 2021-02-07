@@ -36,7 +36,7 @@ std::vector<std::complex<double>> ChannelAveraged(AudioFile<double> &song);
 
 std::vector<std::complex<double>> DFT(std::vector<std::complex<double>> &samples);
 
-std::vector<std::vector<double>> NormaliseAmplitude(std::vector<std::vector<double>> &magnitudes);
+void NormaliseAmplitude(std::vector<std::vector<double>> &magnitudes);
 
 std::vector<double> SpectrumFrequencies(std::vector<double> &frequencies, int N);
 
