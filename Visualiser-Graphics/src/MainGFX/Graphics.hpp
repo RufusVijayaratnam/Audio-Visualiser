@@ -15,12 +15,15 @@
 #include <iostream>
 #include "shader.hpp"
 #include <string>
+#include <vector>
+
 
 
 
 namespace gfx {
     bool InitialiseGLFW();
     GLFWwindow* OpenWindow(const char * windowName, bool &windowOpened);
-    void Main(GLFWwindow* window);
+    void Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes);
+    std::vector<glm::vec3> GetFrameVertices(std::vector<double> &magnitudes);
 }
 #endif

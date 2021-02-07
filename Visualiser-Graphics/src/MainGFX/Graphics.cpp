@@ -60,7 +60,7 @@ GLFWwindow* gfx::OpenWindow(const char * windowName, bool &windowOpened) {
     return window;
 }
 
-void gfx::Main(GLFWwindow* window) {
+void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes) {
 
     GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
@@ -73,17 +73,19 @@ void gfx::Main(GLFWwindow* window) {
     //GLuint programID = LoadShaders(vertexPath, fragmentPath);
 
 
-	static const GLfloat g_vertex_buffer_data[] = { 
+	/* static const GLfloat g_vertex_buffer_data[] = { 
 		-1.0f, -1.0f, 0.0f,
 		 1.0f, -1.0f, 0.0f,
 		 0.0f,  1.0f, 0.0f,
-	};
+	}; */
+
+    std::vector<glm::vec3> g_vertex_buffer_data = gfx::GetFrameVertices(spectrumMagnitudes[36]);
 
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-
+	//glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), float(g_vertex_buffer_data), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), &g_vertex_buffer_data[0], GL_STATIC_DRAW);
     do{
     // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
     glClear( GL_COLOR_BUFFER_BIT );
@@ -102,7 +104,7 @@ void gfx::Main(GLFWwindow* window) {
 		(void*)0            // array buffer offset
     );
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_data.size() * 3);
     glDisableVertexAttribArray(0);
 
     // Swap buffers
@@ -119,4 +121,65 @@ void gfx::Main(GLFWwindow* window) {
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
+}
+
+// XYZ convention
+std::vector<glm::vec3> gfx::GetFrameVertices(std::vector<double> &magnitudes) {
+    std::vector<glm::vec3> frameVertices;
+    int nBars = magnitudes.size();
+    //Every bar will have six vertices, each of those with 3 coordinates, z is always 0
+    //Length of frameVertices will be nBars * 6 * 3
+    const float maxBarWidth = 2.0 / nBars;
+    const float spacing = 0.5 * maxBarWidth;
+    const float barWidth = spacing;
+    for (int i = 0; i < nBars; i++) { //For every bar
+        //Triangle points top to bottom, left to right
+        const float y = float(magnitudes[i]);
+        const float x1 = spacing + spacing * i + i * barWidth - 1.0;
+        const float x2 = x1 + barWidth;
+        const float z = 0.0f;
+        const float bottom = -1.0f;
+
+        const glm::vec3 p1 = {x1, y, z};
+        const glm::vec3 p2 = {x1, bottom, z};
+        const glm::vec3 p3 = {x2, bottom, z};
+        const glm::vec3 p4 = p1;
+        const glm::vec3 p5 = {x2, y, z};
+        const glm::vec3 p6 = p3;
+
+        frameVertices.push_back(p1);
+        frameVertices.push_back(p2);
+        frameVertices.push_back(p3);
+        frameVertices.push_back(p4);
+        frameVertices.push_back(p5);
+        frameVertices.push_back(p6);
+
+        printf("Loop: %i, mag: %f \n", i, y);
+        //Triangle 1
+       /*  frameVertices.push_back(x1);
+        frameVertices.push_back(y);
+        frameVertices.push_back(z);
+
+        frameVertices.push_back(x1);
+        frameVertices.push_back(bottom);
+        frameVertices.push_back(z);
+       
+        frameVertices.push_back(x2);
+        frameVertices.push_back(bottom);
+        frameVertices.push_back(z);
+
+        //Triangle 2
+        frameVertices.push_back(x1);
+        frameVertices.push_back(y);
+        frameVertices.push_back(z);
+
+        frameVertices.push_back(x2);
+        frameVertices.push_back(y);
+        frameVertices.push_back(z);
+
+        frameVertices.push_back(x2);
+        frameVertices.push_back(bottom);
+        frameVertices.push_back(z); */
+    }
+    return frameVertices;
 }

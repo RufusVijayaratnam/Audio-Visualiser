@@ -186,8 +186,8 @@ std::vector<double> Audio::SpectrumFrequencies(std::vector<double> &frequencies,
 		maxFrequency = frequencies.back();
 	}
 
-	double span = (maxFrequency - minFrequency) / N;
-	for (int i = 0; i <= N; i++) {
+	double span = (maxFrequency - minFrequency) / (N);
+	for (int i = 0; i <= (N); i++) {
 		double spectrumFrequency = 50 + span * i;
 		spectrumFrequencies.push_back(spectrumFrequency);
 	}
@@ -206,10 +206,9 @@ std::vector<std::vector<double>> Audio::MagnitudeToSpectrum(std::vector<std::vec
 	for (int k = 0; k < nFrames; k++) {
 
 	int prevMinIndex = 0;
-	int currentIndex; //These are used to increase efficiency of the loop. To remember where 
-		//For single frame
+	int currentIndex; //These are used to increase efficiency of the loop. To remember where we were.
 		std::vector<double> dividedMagnitudesFrame;
-		for (int i = 0; i < (N - 1); i++) { //Iterate through each frequency range
+		for (int i = 0; i < (N); i++) { //Iterate through each frequency range
 			std::vector<double> frequencyBandMags;
 			double max = spectrumFrequencies[i + 1];
 			for (int j = prevMinIndex; j < (BLOCK_SIZE / 2); j++) {
@@ -226,12 +225,7 @@ std::vector<std::vector<double>> Audio::MagnitudeToSpectrum(std::vector<std::vec
 			dividedMagnitudesFrame.push_back(bandAvg);
 			prevMinIndex = currentIndex;
 		}
-
 		dividedMagnitudes.push_back(dividedMagnitudesFrame);
-		//Single frame end
-
-
-
 	}
 	return dividedMagnitudes;
 }
