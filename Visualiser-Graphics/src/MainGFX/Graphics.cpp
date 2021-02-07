@@ -60,7 +60,14 @@ GLFWwindow* gfx::OpenWindow(const char * windowName, bool &windowOpened) {
     return window;
 }
 
-void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes) {
+void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes, double &frameTime, Mix_Chunk* sound) {
+
+    int channel;
+
+    channel = Mix_PlayChannel(-1, sound, 0); 
+    if(channel == -1) {
+        fprintf(stderr, "Unable to play WAV file: %s\n", Mix_GetError()); 
+    }
 
     GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
@@ -72,21 +79,30 @@ void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMag
     GLuint programID = LoadShaders("/mnt/c/Users/Rufus Vijayaratnam/Dev/Audio Visualiser/Visualiser-Graphics/src/Shaders/SimpleVertexShader.vertexshader", "/mnt/c/Users/Rufus Vijayaratnam/Dev/Audio Visualiser/Visualiser-Graphics/src/Shaders/SimpleFragmentShader.fragmentshader");
     //GLuint programID = LoadShaders(vertexPath, fragmentPath);
 
+	GLuint vertexbuffer;
+	glGenBuffers(1, &vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 
 	/* static const GLfloat g_vertex_buffer_data[] = { 
 		-1.0f, -1.0f, 0.0f,
 		 1.0f, -1.0f, 0.0f,
 		 0.0f,  1.0f, 0.0f,
 	}; */
-
-    std::vector<glm::vec3> g_vertex_buffer_data = gfx::GetFrameVertices(spectrumMagnitudes[36]);
-
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glfwSetTime(0);
+    int currentFrame = 0;
+    bool began = false;
+    do{
+    if(!began) {
+        began = true;
+        while(Mix_Playing(channel) != 1);    
+    }
+    
+    glfwSetTime(0);
+    
+    std::vector<glm::vec3> g_vertex_buffer_data = gfx::GetFrameVertices(spectrumMagnitudes[currentFrame]);
 	//glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), float(g_vertex_buffer_data), GL_STATIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), &g_vertex_buffer_data[0], GL_STATIC_DRAW);
-    do{
+
     // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
     glClear( GL_COLOR_BUFFER_BIT );
 
@@ -110,6 +126,13 @@ void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMag
     // Swap buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
+
+    double timePassed = glfwGetTime();
+    
+    while (timePassed < frameTime) {
+        timePassed = glfwGetTime();
+    }
+    currentFrame++;
 
     } while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
        glfwWindowShouldClose(window) == 0 );
@@ -153,33 +176,6 @@ std::vector<glm::vec3> gfx::GetFrameVertices(std::vector<double> &magnitudes) {
         frameVertices.push_back(p4);
         frameVertices.push_back(p5);
         frameVertices.push_back(p6);
-
-        printf("Loop: %i, mag: %f \n", i, y);
-        //Triangle 1
-       /*  frameVertices.push_back(x1);
-        frameVertices.push_back(y);
-        frameVertices.push_back(z);
-
-        frameVertices.push_back(x1);
-        frameVertices.push_back(bottom);
-        frameVertices.push_back(z);
-       
-        frameVertices.push_back(x2);
-        frameVertices.push_back(bottom);
-        frameVertices.push_back(z);
-
-        //Triangle 2
-        frameVertices.push_back(x1);
-        frameVertices.push_back(y);
-        frameVertices.push_back(z);
-
-        frameVertices.push_back(x2);
-        frameVertices.push_back(y);
-        frameVertices.push_back(z);
-
-        frameVertices.push_back(x2);
-        frameVertices.push_back(bottom);
-        frameVertices.push_back(z); */
     }
     return frameVertices;
 }

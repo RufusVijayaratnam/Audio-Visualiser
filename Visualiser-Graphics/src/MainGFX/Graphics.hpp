@@ -16,6 +16,9 @@
 #include "shader.hpp"
 #include <string>
 #include <vector>
+#include <cmath>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 
 
 
@@ -23,7 +26,7 @@
 namespace gfx {
     bool InitialiseGLFW();
     GLFWwindow* OpenWindow(const char * windowName, bool &windowOpened);
-    void Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes);
+    void Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes, double &frameTime, Mix_Chunk* sound);
     std::vector<glm::vec3> GetFrameVertices(std::vector<double> &magnitudes);
 }
 #endif
