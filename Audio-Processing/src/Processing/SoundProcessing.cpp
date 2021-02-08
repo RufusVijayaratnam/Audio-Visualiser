@@ -94,14 +94,14 @@ std::vector<std::vector<std::complex<double>>> Audio::TrimFrames(std::vector<std
 	int nyquistLimitIndex = BLOCK_SIZE / 2;
 	int nFrames = frames.size();
 	for (int i = 0; i < nFrames; i++) {
-		frames[i] = std::vector<std::complex<double>>(frames[i].begin(), frames[i].end() - nyquistLimitIndex + 1);
+		frames[i] = std::vector<std::complex<double>>(frames[i].begin(), frames[i].end() - nyquistLimitIndex);
 	}
 	return frames;
 }
 
 std::vector<std::vector<double>> Audio::ExtractMagnitudes(std::vector<std::vector<std::complex<double>>> &frames) {
 	std::vector<std::vector<double>> magnitudes;
-	int frameSize = BLOCK_SIZE / 2;
+	int frameSize = frames[0].size();
 	int nFrames = frames.size();
 	for (int i = 0; i < nFrames; i++) {
 		std::vector<double> frameMagnitudes;
@@ -160,11 +160,12 @@ std::vector<std::complex<double>> Audio::DFT(std::vector<std::complex<double>> &
 //spectrum bars are going off the screen.
 void Audio::NormaliseAmplitude(std::vector<std::vector<double>> &magnitudes) {
 	int nFrames = magnitudes.size();
+	int frameSize = magnitudes[0].size();
 	std::vector<std::vector<double>> normalisedFrames;
 	for (int i = 0; i < nFrames; i++) {
 		double maxAmplitude = *std::max_element(magnitudes[i].begin(), magnitudes[i].end());
 		std::vector<double> normalisedFrame;
-		for (int j = 0; j < (BLOCK_SIZE / 2); j++) {
+		for (int j = 0; j < frameSize; j++) {
 			//Line below ensures that all amplitudes will range from 0 to 1.6
 			double element = magnitudes[i][j] / (1.0 / 1.6 * maxAmplitude);
 			element -= 0.8; //Now all elements are between - 0.8 and 0.8
@@ -194,38 +195,57 @@ std::vector<double> Audio::SpectrumFrequencies(std::vector<double> &frequencies,
 	return spectrumFrequencies;
 }
 
-//This function takes in the full magnitude vector and the vector of frequency ranges to be represented by each 
-//segment of the spectrum.
-//It divides the magnitudes into the correct respective ranges. The length of each frame will be N where N
-//is the desired number of bars on the spectrum.
-std::vector<std::vector<double>> Audio::MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> &spectrumFrequencies, std::vector<double> &frequencies) {
-	std::vector<std::vector<double>> dividedMagnitudes;
-	int N = spectrumFrequencies.size() - 1;
-	printf("here n is %i \n", N);
-	int nFrames = magnitudes.size();
-	for (int k = 0; k < nFrames; k++) {
 
-	int prevMinIndex = 0;
-	int currentIndex; //These are used to increase efficiency of the loop. To remember where we were.
-		std::vector<double> dividedMagnitudesFrame;
-		for (int i = 0; i < (N); i++) { //Iterate through each frequency range
-			std::vector<double> frequencyBandMags;
-			double max = spectrumFrequencies[i + 1];
-			for (int j = prevMinIndex; j < (BLOCK_SIZE / 2); j++) {
-				double mag = magnitudes[k][j];
-				double magFrequency = frequencies[j];
-				if (magFrequency < max) {
-					frequencyBandMags.push_back(mag);
-					currentIndex = j;
-				} else {
-					break;
-				}
-			}
-			double bandAvg = std::accumulate(frequencyBandMags.begin(), frequencyBandMags.end(), 0.0) / ((currentIndex + 1) - prevMinIndex);
-			dividedMagnitudesFrame.push_back(bandAvg);
-			prevMinIndex = currentIndex;
+void Audio::LogNormaliseAmplitude(std::vector<std::vector<double>> &magnitudes) {
+	int nFrames = magnitudes.size();
+	int frameSize = magnitudes[0].size();
+	std::vector<std::vector<double>> normalisedFrames;
+	for (int i = 0; i < nFrames; i++) {
+		double maxAmplitude = *std::max_element(magnitudes[i].begin(), magnitudes[i].end());
+		double minAmplitude = *std::min_element(magnitudes[i].begin(), magnitudes[i].end());
+
+		std::vector<double> normalisedFrame;
+		for (int j = 0; j < frameSize; j++) {
+			//Line below ensures that all amplitudes will range from 0 to 1.6
+			double logNormalisedMag = std::log2(magnitudes[i][j] - minAmplitude + 1) / std::log2(maxAmplitude - minAmplitude);
+			//logNormalisedMag -= 0.8;
+			normalisedFrame.push_back(logNormalisedMag);
 		}
-		dividedMagnitudes.push_back(dividedMagnitudesFrame);
+
+		/* double minNormalised = *std::min_element(normalisedFrame.begin(), normalisedFrame.end());
+		for (int i = 0; i < (BLOCK_SIZE / 2); i++) {
+			normalisedFrame[i] += minNormalised;
+		} */
+			//normalisedFrames.push_back(normalisedFrame);
+			magnitudes[i] = normalisedFrame;
 	}
-	return dividedMagnitudes;
+}
+
+std::vector<int> Audio::GetFrequencyIndexes(const std::vector<double> &frequencies, const int minFrequency, const int maxFrequency, const int bars, const int sampleRate) {
+	std::vector<int> frequencyIndexes;
+	int minIndex = std::ceil(double(minFrequency) / double(sampleRate) * BLOCK_SIZE);
+	int maxIndex = std::floor(double(maxFrequency) / double(sampleRate) * BLOCK_SIZE);
+	
+	int indexStep = std::round((maxIndex - minIndex) / bars);
+	frequencyIndexes.push_back(minIndex);
+	for (int i = 1; i <= bars; i++) {
+		int index = minIndex + i * indexStep;
+		frequencyIndexes.push_back(index);
+	}
+	if (frequencyIndexes.back() > frequencies.size()) frequencyIndexes.back() = frequencies.size(); 
+	return frequencyIndexes;
+}
+
+void Audio::SpectrumMagnitudes(std::vector<std::vector<double>> &magnitudes, const std::vector<int> &frequencyIndexes) {
+	std::vector<std::vector<double>> spectrumMagnitudes;
+	for (int j = 0; j < magnitudes.size(); j++) {
+		for (int i = 1; i < frequencyIndexes.size(); i++) {
+			int begin = frequencyIndexes[i - 1];
+			int end = magnitudes[j].size() - frequencyIndexes[i];
+			double sum = std::accumulate(magnitudes[j].begin() + begin, magnitudes[j].end() - end, 0);
+			double avg = sum / (end - begin);
+			magnitudes[j][i] = avg;
+		}
+			magnitudes[j].resize(frequencyIndexes.size());
+	}
 }

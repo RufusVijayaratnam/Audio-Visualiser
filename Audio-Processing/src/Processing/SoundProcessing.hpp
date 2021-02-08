@@ -41,5 +41,11 @@ void NormaliseAmplitude(std::vector<std::vector<double>> &magnitudes);
 std::vector<double> SpectrumFrequencies(std::vector<double> &frequencies, int N);
 
 std::vector<std::vector<double>> MagnitudeToSpectrum(std::vector<std::vector<double>> &magnitudes, std::vector<double> &spectrumFrequencies, std::vector<double> &frequencies);
+
+void LogNormaliseAmplitude(std::vector<std::vector<double>> &magnitudes);
+
+std::vector<int> GetFrequencyIndexes(const std::vector<double> &frequencies, const int minimumFrequency, const int maxFrequency, const int bars, const int sampleRate);
+
+void SpectrumMagnitudes(std::vector<std::vector<double>> &magnitudes, const std::vector<int> &frequencyIndexes);
 }
 #endif 
