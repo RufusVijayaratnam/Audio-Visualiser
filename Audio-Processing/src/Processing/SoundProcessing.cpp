@@ -122,9 +122,16 @@ std::vector<std::vector<double>> Audio::ExtractMagnitudes(std::vector<std::vecto
 std::vector<std::complex<double>> Audio::ChannelAveraged(AudioFile<double> &song) {
 	std::vector<std::complex<double>> samples;
     int numSamples = song.getNumSamplesPerChannel();
+	int numChannels = song.getNumChannels();
+	if (numChannels == 1) {
+		for (int i = 0; i < numSamples; i++) {
+			samples.push_back(song.samples[0][i]);
+		}
+		return samples;
+	}
     for (int i = 0; i < numSamples; i++) {
         double channelAvg = (song.samples[0][i] + song.samples[1][i]) / 2;
-        samples.push_back(std::complex<double>(channelAvg));
+        samples.push_back(std::complex<double>(channelAvg) * 32767.0);
     }
 	return samples;
 }
@@ -207,45 +214,69 @@ void Audio::LogNormaliseAmplitude(std::vector<std::vector<double>> &magnitudes) 
 		std::vector<double> normalisedFrame;
 		for (int j = 0; j < frameSize; j++) {
 			//Line below ensures that all amplitudes will range from 0 to 1.6
-			double logNormalisedMag = std::log2(magnitudes[i][j] - minAmplitude + 1) / std::log2(maxAmplitude - minAmplitude);
+			double logNormalisedMag = std::log10(magnitudes[i][j] - minAmplitude) / std::log10(maxAmplitude - minAmplitude);
 			//logNormalisedMag -= 0.8;
 			normalisedFrame.push_back(logNormalisedMag);
 		}
-
-		/* double minNormalised = *std::min_element(normalisedFrame.begin(), normalisedFrame.end());
-		for (int i = 0; i < (BLOCK_SIZE / 2); i++) {
-			normalisedFrame[i] += minNormalised;
-		} */
-			//normalisedFrames.push_back(normalisedFrame);
 			magnitudes[i] = normalisedFrame;
 	}
 }
 
 std::vector<int> Audio::GetFrequencyIndexes(const std::vector<double> &frequencies, const int minFrequency, const int maxFrequency, const int bars, const int sampleRate) {
 	std::vector<int> frequencyIndexes;
-	int minIndex = std::ceil(double(minFrequency) / double(sampleRate) * BLOCK_SIZE);
-	int maxIndex = std::floor(double(maxFrequency) / double(sampleRate) * BLOCK_SIZE);
+	int minIndex = std::floor(double(minFrequency) / double(sampleRate) * BLOCK_SIZE);
+	int maxIndex = std::ceil(double(maxFrequency) / double(sampleRate) * BLOCK_SIZE);
 	
-	int indexStep = std::round((maxIndex - minIndex) / bars);
+	double indexStep = double(maxIndex - minIndex) / double(bars);
 	frequencyIndexes.push_back(minIndex);
 	for (int i = 1; i <= bars; i++) {
-		int index = minIndex + i * indexStep;
+		int index = std::round(double(minIndex) + double(i) * indexStep);
 		frequencyIndexes.push_back(index);
 	}
 	if (frequencyIndexes.back() > frequencies.size()) frequencyIndexes.back() = frequencies.size(); 
 	return frequencyIndexes;
 }
 
-void Audio::SpectrumMagnitudes(std::vector<std::vector<double>> &magnitudes, const std::vector<int> &frequencyIndexes) {
+void Audio::SpectrumMagnitudes(std::vector<std::vector<double>> &magnitudes, const std::vector<int> &frequencyIndexes, int mode) {
 	std::vector<std::vector<double>> spectrumMagnitudes;
-	for (int j = 0; j < magnitudes.size(); j++) {
-		for (int i = 1; i < frequencyIndexes.size(); i++) {
-			int begin = frequencyIndexes[i - 1];
-			int end = magnitudes[j].size() - frequencyIndexes[i];
-			double sum = std::accumulate(magnitudes[j].begin() + begin, magnitudes[j].end() - end, 0);
-			double avg = sum / (end - begin);
-			magnitudes[j][i] = avg;
+	const std::vector<std::vector<double>> tempMags = magnitudes;
+
+	if (mode==0) {
+		for (int j = 0; j < tempMags.size(); j++) {
+			for (int i = 0; i < (frequencyIndexes.size() - 1); i++) {
+				int begin = frequencyIndexes[i];
+				int end = tempMags[j].size() - frequencyIndexes[i + 1];
+				double sum = std::accumulate(tempMags[j].begin() + begin, tempMags[j].end() - end + 1, 0.0);
+				double avg = sum / (frequencyIndexes[i + 1] + 1 - begin);
+				magnitudes[j][i] = avg;
+				//printf("j: %i i: %i, begin: %i, end: %i, sum: %f, avg %f \n", j, i, begin, frequencyIndexes[i + 1], sum, avg);
+			}
+				magnitudes[j].resize(frequencyIndexes.size() - 1);
+
 		}
-			magnitudes[j].resize(frequencyIndexes.size());
+	} else if (mode==1) {
+		for (int j = 0; j < tempMags.size(); j++) {
+			for (int i = 0; i < (frequencyIndexes.size() - 1); i++) {
+				int begin = frequencyIndexes[i];
+				int end = tempMags[j].size() - frequencyIndexes[i + 1];
+				double max = *std::max_element(tempMags[j].begin() + begin, tempMags[j].end() - end + 1);
+				magnitudes[j][i] = max;
+				}
+				magnitudes[j].resize(frequencyIndexes.size() - 1);
+			}
 	}
+	
+}
+
+void Audio::ThreshholdMagnitudes(std::vector<std::vector<double>> &magnitudes, double val, double ceil, double floor) {
+    for (int j = 0; j < magnitudes.size(); j++) {
+        for (int i = 0; i < magnitudes[j].size(); i++) {
+            double &amp = magnitudes[j][i];
+            if (amp >= val) {
+                amp = amp;
+            } else {
+                amp = floor;
+            }
+        }
+    }
 }

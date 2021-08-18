@@ -17,9 +17,10 @@ int main() {
     int spectrumBars = 20;
     AudioFile<double> Song;
     std::string directory = "/mnt/c/Users/Rufus Vijayaratnam/Dev/Audio Visualiser/Sounds/";
-    std::string audioFile = "test-audio.wav";
+    std::string audioFile = "sines.wav";
     std::string filePath = directory + audioFile;
     Song.load(filePath);
+    Song.printSummary();
     int sampleRate = Song.getSampleRate();
     double frameTime = 1024.0 / double(sampleRate);
    
@@ -28,16 +29,25 @@ int main() {
     samples = Audio::ChannelAveraged(Song);
     Audio::TrimAudioSample(samples);
     
+    std::cout << "beginning fft stuff" << std::endl;
     frames = Audio::FrameSamples(samples);
     frequencyBins = Audio::FramedFFT(frames);
     frames = Audio::TrimFrames(frequencyBins);
+    
     std::vector<double> frequencies = Audio::ExtractFrequencies(Song.getSampleRate());
+    std::vector<int> frequencyIndexes = Audio::GetFrequencyIndexes(frequencies, 0, 15000, 512, sampleRate);
     std::vector<std::vector<double>> magnitudes = Audio::ExtractMagnitudes(frames);
+    Audio::SpectrumMagnitudes(magnitudes, frequencyIndexes, 0);
+    //Audio::LogNormaliseAmplitude(magnitudes);
     Audio::NormaliseAmplitude(magnitudes);
-    //std::vector<double> spectrumFrequencies = Audio::SpectrumFrequencies(frequencies, spectrumBars);
-   // std::vector<std::vector<double>> spectrumMagnitudes = Audio::MagnitudeToSpectrum(magnitudes, spectrumFrequencies, frequencies);
-    
-    
+    //Audio::ThreshholdMagnitudes(magnitudes, 0.7, 0.8, -0.8);
+
+
+    /* for (int i = 0; i < frequencyIndexes.size(); i++) {
+            std::cout << frequencyIndexes[i] << std::endl;
+    } */
+
+    std::cout << "Managed to finish FFT stuff" << std::endl;
 
     
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) { 
@@ -45,10 +55,10 @@ int main() {
     }
 
     Uint16 audio_format = AUDIO_S16SYS; 
-    int audio_channels = 2; 
-    int audio_buffers = 4096;
+    int audio_channels = 2;
+    int audio_buffers = 1024;
 
-    if(Mix_OpenAudio(sampleRate, audio_format, audio_channels, audio_buffers) != 0) { 
+    if(Mix_OpenAudio(sampleRate * 2, audio_format, audio_channels, audio_buffers) != 0) { 
         fprintf(stderr, "Unable to initialize audio: %s\n", Mix_GetError()); exit(1); 
     }
 

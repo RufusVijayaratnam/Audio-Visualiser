@@ -46,6 +46,8 @@ void LogNormaliseAmplitude(std::vector<std::vector<double>> &magnitudes);
 
 std::vector<int> GetFrequencyIndexes(const std::vector<double> &frequencies, const int minimumFrequency, const int maxFrequency, const int bars, const int sampleRate);
 
-void SpectrumMagnitudes(std::vector<std::vector<double>> &magnitudes, const std::vector<int> &frequencyIndexes);
+void SpectrumMagnitudes(std::vector<std::vector<double>> &magnitudes, const std::vector<int> &frequencyIndexes, int mode);
+
+void ThreshholdMagnitudes(std::vector<std::vector<double>> &magnitudes, double val, double ceil, double floor);
 }
 #endif 

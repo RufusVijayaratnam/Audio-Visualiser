@@ -28,7 +28,7 @@ bool gfx::InitialiseGLFW() {
 
 GLFWwindow* gfx::OpenWindow(const char * windowName, bool &windowOpened) {
     GLFWwindow* window;
-    window = glfwCreateWindow(1024, 720, windowName, NULL, NULL);
+    window = glfwCreateWindow(1080, 720, windowName, NULL, NULL);
     std::cout << "here window is: " << window << std::endl;
 
     if (window == NULL) {
@@ -52,7 +52,7 @@ GLFWwindow* gfx::OpenWindow(const char * windowName, bool &windowOpened) {
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwPollEvents();
-    glfwSetCursorPos(window, 1024 / 2, 720 / 2);
+    //glfwSetCursorPos(window, 1024 / 2, 720 / 2);
 
     //Set coloured background, Disable if some fancier method desired.
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -63,12 +63,11 @@ GLFWwindow* gfx::OpenWindow(const char * windowName, bool &windowOpened) {
 void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMagnitudes, double &frameTime, Mix_Chunk* sound) {
 
     int channel;
-
     channel = Mix_PlayChannel(-1, sound, 0); 
     if(channel == -1) {
         fprintf(stderr, "Unable to play WAV file: %s\n", Mix_GetError()); 
     }
-
+    
     GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
@@ -82,57 +81,67 @@ void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMag
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-
-	/* static const GLfloat g_vertex_buffer_data[] = { 
-		-1.0f, -1.0f, 0.0f,
-		 1.0f, -1.0f, 0.0f,
-		 0.0f,  1.0f, 0.0f,
-	}; */
+    
     glfwSetTime(0);
     int currentFrame = 0;
     bool began = false;
-    do{
-    if(!began) {
-        began = true;
-        while(Mix_Playing(channel) != 1);    
-    }
+
+
+    //int currentFrame;
+    do  {
+
+        if (Mix_Playing(channel) == 1) {
+        //printf("current frame is: %i", currentFrame);
     
-    glfwSetTime(0);
+        /* double timePassed = glfwGetTime();
+        //static double beginTime = glfwGetTime();
+        int skippedFrames = std::floor(timePassed / frameTime);
+        currentFrame += skippedFrames; */
+       
+        //glfwSetTime(0);
+        
+        std::vector<glm::vec3> g_vertex_buffer_data = gfx::GetFrameVertices(spectrumMagnitudes[currentFrame]);
+        //glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), float(g_vertex_buffer_data), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), &g_vertex_buffer_data[0], GL_STATIC_DRAW);
+
+        // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
+        glClear( GL_COLOR_BUFFER_BIT );
+
+        glUseProgram(programID);
+
+        // Draw nothing, see you in tutorial 2 !
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(
+            0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+        );
+
+        glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_data.size() * 3);
+        glDisableVertexAttribArray(0);
+
+        // Swap buffers
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+
+        double timePassed = glfwGetTime();
+        while (timePassed < frameTime) {
+            SDL_Delay(frameTime * 1000 - timePassed * 1000 * 0.1);
+            timePassed = glfwGetTime();
+        }
+        currentFrame++;
+        
+        
+        //currentFrame++; 
+        } else {
+            SDL_Delay(1);
+            glfwSetTime(0);
+        }
     
-    std::vector<glm::vec3> g_vertex_buffer_data = gfx::GetFrameVertices(spectrumMagnitudes[currentFrame]);
-	//glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), float(g_vertex_buffer_data), GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), &g_vertex_buffer_data[0], GL_STATIC_DRAW);
-
-    // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
-    glClear( GL_COLOR_BUFFER_BIT );
-
-    glUseProgram(programID);
-
-    // Draw nothing, see you in tutorial 2 !
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		0,                  // stride
-		(void*)0            // array buffer offset
-    );
-
-    glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_data.size() * 3);
-    glDisableVertexAttribArray(0);
-
-    // Swap buffers
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-
-    double timePassed = glfwGetTime();
-    
-    while (timePassed < frameTime) {
-        timePassed = glfwGetTime();
-    }
-    currentFrame++;
 
     } while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
        glfwWindowShouldClose(window) == 0 );
@@ -179,3 +188,4 @@ std::vector<glm::vec3> gfx::GetFrameVertices(std::vector<double> &magnitudes) {
     }
     return frameVertices;
 }
+
