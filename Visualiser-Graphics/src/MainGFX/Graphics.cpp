@@ -39,6 +39,7 @@ GLFWwindow* gfx::OpenWindow(const char * windowName, bool &windowOpened) {
         return window;
     }
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);
 
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
@@ -85,20 +86,26 @@ void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMag
     glfwSetTime(0);
     int currentFrame = 0;
     bool began = false;
+    double prevTime = 0;
+    double currentTime = 0;
 
-
+    const double waitTime = 0.45;
     //int currentFrame;
     do  {
 
         if (Mix_Playing(channel) == 1) {
         //printf("current frame is: %i", currentFrame);
-    
-        /* double timePassed = glfwGetTime();
-        //static double beginTime = glfwGetTime();
-        int skippedFrames = std::floor(timePassed / frameTime);
-        currentFrame += skippedFrames; */
-       
-        //glfwSetTime(0);
+
+        if (!began) {
+            began = true;
+            glfwSetTime(0);
+            while (waitTime > glfwGetTime()) {
+                SDL_Delay(1);
+            }
+            glfwSetTime(0);
+        }
+
+        
         
         std::vector<glm::vec3> g_vertex_buffer_data = gfx::GetFrameVertices(spectrumMagnitudes[currentFrame]);
         //glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data.size() * sizeof(glm::vec3), float(g_vertex_buffer_data), GL_STATIC_DRAW);
@@ -130,21 +137,20 @@ void gfx::Main(GLFWwindow* window, std::vector<std::vector<double>> &spectrumMag
 
         double timePassed = glfwGetTime();
         while (timePassed < frameTime) {
-            SDL_Delay(frameTime * 1000 - timePassed * 1000 * 0.1);
+            SDL_Delay(1);
             timePassed = glfwGetTime();
         }
         currentFrame++;
-        
+        glfwSetTime(0);
         
         //currentFrame++; 
         } else {
-            SDL_Delay(1);
+            //SDL_Delay(1);
             glfwSetTime(0);
         }
     
 
-    } while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-       glfwWindowShouldClose(window) == 0 );
+    } while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS);
 
     glDeleteBuffers(1, &vertexbuffer);
 	glDeleteVertexArrays(1, &VertexArrayID);

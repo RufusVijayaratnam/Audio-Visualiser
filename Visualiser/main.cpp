@@ -17,7 +17,7 @@ int main() {
     int spectrumBars = 20;
     AudioFile<double> Song;
     std::string directory = "/mnt/c/Users/Rufus Vijayaratnam/Dev/Audio Visualiser/Sounds/";
-    std::string audioFile = "sines.wav";
+    std::string audioFile = "replay.wav";
     std::string filePath = directory + audioFile;
     Song.load(filePath);
     Song.printSummary();
